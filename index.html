@@ -32,6 +32,7 @@
             box-sizing: border-box; 
         }
 
+        /* Bilgisayar yazı tipleri (Değişmedi) */
         h1 {
             color: #00796b;
             text-align: center;
@@ -53,7 +54,6 @@
             overflow: hidden; 
         }
 
-        /* ****** DEĞİŞİKLİK BURADA ****** */
         .secenekler-kutusu {
             flex: 0 0 auto; 
             min-width: 200px; 
@@ -65,10 +65,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            
-            /* Dikey denge eklendi */
-            justify-content: space-around; /* 'center' yerine 'space-around' */
-            
+            justify-content: space-around; 
             transition: background-color 0.3s ease;
         }
 
@@ -82,6 +79,7 @@
             overflow: hidden; 
         }
 
+        /* Bilgisayar yazı tipleri (Değişmedi) */
         .cumle-baslangic {
             font-size: clamp(1.8rem, 4vw, 2.8rem);
             line-height: 1.5; 
@@ -92,6 +90,7 @@
             text-overflow: ellipsis; 
         }
 
+        /* Bilgisayar yazı tipleri (Değişmedi) */
         .kart-bitis {
             font-size: clamp(1.6rem, 3.5vw, 2.6rem);
             font-weight: 600; 
@@ -151,14 +150,14 @@
         #geriBildirim { display: none; }
         
         
-        /* TABLET */
+        /* ****** TABLET İÇİN YAZI TİPİ GÜNCELLENDİ ****** */
         @media (max-width: 1024px) {
-            h1 { font-size: clamp(2.4rem, 5vw, 4.0rem); }
-            .cumle-baslangic { font-size: clamp(1.8rem, 4vw, 2.6rem); }
-            .kart-bitis { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
+            h1 { font-size: 3rem; }
+            .cumle-baslangic { font-size: 2.4rem; }
+            .kart-bitis { font-size: 2.3rem; }
         }
         
-        /* TELEFON/TABLET DİKEY MOD */
+        /* ****** TELEFON İÇİN YAZI TİPİ GÜNCELLENDİ ****** */
         @media (max-width: 768px) {
             .etkilesim-alani {
                 flex-direction: column-reverse; 
@@ -170,20 +169,23 @@
                 min-height: auto; 
             }
             .secenekler-kutusu {
-                /* Dikey denge kuralı burada zaten vardı, 'row' olarak ayarlandı */
                 justify-content: space-around; 
                 flex-direction: row; 
                 flex-wrap: wrap; 
             }
 
-            h1 { font-size: 2.2rem; white-space: normal; } 
+            /* Yeni sabit telefon boyutları */
+            h1 { 
+                font-size: 3rem; 
+                white-space: normal; 
+            }
             .cumle-baslangic {
-                font-size: 1.6rem;
+                font-size: 2.4rem;
                 white-space: normal; 
                 text-overflow: unset;
             }
             .kart-bitis {
-                font-size: 1.5rem;
+                font-size: 2.3rem;
                 white-space: normal; 
                 text-overflow: unset;
             }
@@ -319,7 +321,7 @@
 
                             kartKlonu.addEventListener('dragstart', dragStartHandler);
                             kartKlonu.addEventListener('dragend', dragEndHandler);
-                            
+
                             doluSlotSayisi++;
                             checkButtonState(); 
                         }
