@@ -50,16 +50,14 @@
             white-space: nowrap; 
         }
         
-        /* */
         .etkilesim-alani {
             display: flex;
             flex-wrap: nowrap; 
             gap: 40px; 
-            flex: 1; /* height: 100% yerine bu kullanıldı */
-            min-height: 0; /* flex taşmalarını engellemek için eklendi */
+            flex: 1; 
+            min-height: 0; 
             overflow: hidden; 
         }
-        /* */
 
         .cumleler-kutusu {
             flex: 1.5; 
@@ -95,6 +93,8 @@
             border-radius: 16px; 
             padding: 10px 20px; 
             min-height: 80px; 
+            /* CSS geçişi eklendi */
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
         .cumle-baslangic {
@@ -123,7 +123,7 @@
             border-radius: 16px; 
             margin-bottom: 4px; 
             cursor: grab;
-            transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0.3, 1);
+            transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0.3, 1), background-color 0.3s, border-color 0.3s; /* */
             user-select: none; 
             -webkit-user-select: none;
             -webkit-touch-callout: none;
@@ -145,12 +145,15 @@
              transform: translateY(-10px) scale(1.02) translateZ(0); 
         } 
         
+        /* */
         .kart-bitis.siluet {
             background-color: #f0f0f0; border-color: #d0d0d0; color: #bbb;
-            cursor: not-allowed; opacity: 0.6;
+            cursor: not-allowed; 
+            opacity: 0.3; /* display: none yerine bu kullanıldı */
+            pointer-events: none; /* Tıklanamaz/Sürüklenemez yapar */
             transform: none !important; 
             box-shadow: none !important;
-            display: none; /* Kartı Gizle */
+            /* display: none;  YORUM SATIRI HALİNE GETİRİLDİ */
         }
         .kart-bitis.siluet:hover { box-shadow: none; transform: none; }
 
@@ -327,9 +330,60 @@
             resizeGame();
             window.addEventListener('resize', resizeGame);
             
+            // --- WEB AUDIO API KURULUMU ---
+            let audioCtx;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.error('Web Audio API is not supported in this browser');
+            }
+            document.body.addEventListener('click', () => {
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }, { once: true });
+
+            function playSound(type) {
+                if (!audioCtx) return; 
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+                gainNode.gain.setValueAtTime(0.3, now); 
+
+                switch (type) {
+                    case 'drop':
+                        oscillator.type = 'triangle';
+                        oscillator.frequency.setValueAtTime(300, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.2);
+                        break;
+                    case 'wrong':
+                        oscillator.type = 'square';
+                        oscillator.frequency.setValueAtTime(150, now);
+                        oscillator.frequency.setValueAtTime(100, now + 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.2);
+                        break;
+                    case 'win':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(500, now);
+                        oscillator.frequency.setValueAtTime(800, now + 0.1);
+                        oscillator.frequency.setValueAtTime(1200, now + 0.2);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.4);
+                        break;
+                }
+            }
+            
             // --- Diğer Değişkenler ---
+            const cumlelerKutusu = document.querySelector('.cumleler-kutusu');
             const kartlarContainer = document.querySelector('.secenekler-kutusu');
-            const kartlar = kartlarContainer.querySelectorAll('.kart-bitis');
+            const kartlar = kartlarContainer.querySelectorAll('.kart-bitis'); // Tüm orijinal kartlar
             const alanlar = document.querySelectorAll('.cumleler-kutusu .birakma-alani'); 
             const resetBtn = document.getElementById('resetBtn');
             const checkBtn = document.getElementById('checkBtn');
@@ -339,17 +393,48 @@
             let doluSlotSayisi = 0;
             const toplamEslestirme = alanlar.length;
 
-            // 1. Karıştırma
-            let kartArray = Array.from(kartlar);
-            for (let i = kartArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [kartArray[i], kartArray[j]] = [kartArray[j], kartArray[i]];
-            }
-            kartlarContainer.innerHTML = ''; 
-            kartArray.forEach(kart => kartlarContainer.appendChild(kart));
-            
-            const shuffledKartlar = kartlarContainer.querySelectorAll('.kart-bitis');
 
+            // --- YENİ FONKSİYON: OYUNU SIFIRLA VE KUR ---
+            function resetGame() {
+                // 1. Değişkenleri ve butonları sıfırla
+                doluSlotSayisi = 0;
+                checkBtn.style.display = 'none';
+                resetBtn.style.display = 'block';
+
+                // 2. Bırakma alanlarını temizle ve cümle metinlerini aktifleştir
+                alanlar.forEach(alan => {
+                    alan.innerHTML = ''; // İçindeki klon kartı sil
+                    const cumleMetni = alan.parentElement.querySelector('.cumle-baslangic');
+                    if (cumleMetni) {
+                        cumleMetni.classList.remove('metin-pasif');
+                    }
+                });
+
+                // 3. Seçenek kutusundaki orijinal kartları sıfırla (silüeti kaldır)
+                kartlar.forEach(kart => {
+                    kart.classList.remove('siluet', 'dogru', 'yanlis-anim');
+                    kart.setAttribute('draggable', 'true');
+                    kart.style.cursor = 'grab';
+                });
+                
+                // 4. CÜMLELERİ KARIŞTIR (İsteğiniz)
+                let cumleSatirlari = Array.from(cumlelerKutusu.querySelectorAll('.cumle-satiri'));
+                for (let i = cumleSatirlari.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cumleSatirlari[i], cumleSatirlari[j]] = [cumleSatirlari[j], cumleSatirlari[i]];
+                }
+                // Karışan cümleleri kutuya geri ekle
+                cumleSatirlari.forEach(satir => cumlelerKutusu.appendChild(satir));
+
+                // 5. SEÇENEKLERİ KARIŞTIR (Kartları)
+                let kartArray = Array.from(kartlar);
+                for (let i = kartArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [kartArray[i], kartArray[j]] = [kartArray[j], kartArray[i]];
+                }
+                // Karışan kartları kutuya geri ekle
+                kartArray.forEach(kart => kartlarContainer.appendChild(kart));
+            }
             
             // --- Sürükleme Fonksiyonları (Özel Hayalet Mantığı) ---
             
@@ -380,10 +465,8 @@
                 });
                 
                  e.target.classList.add('dragging');
-
             }
             
-            // "Göz Kırpma" hatasını düzelten fonksiyon
             function dragEndHandler(e) {
                 if (ghostElement && ghostElement.parentElement === document.body) {
                     document.body.removeChild(ghostElement);
@@ -394,7 +477,7 @@
                     if (draggedCard.getAttribute('draggable') === 'false') {
                         // Başarılı bırakma, kart gizli kalsın
                     } else {
-                        // Başarısız bırakma, kartı listede tekrar göster
+                        // Başarısız bırakma, kartı listede tekrar göster (silüeti kaldır)
                         draggedCard.classList.remove('siluet');
                         draggedCard.classList.remove('dragging');
                     }
@@ -403,8 +486,8 @@
                 draggedCard = null; 
             }
 
-            // 2. Olayları Ekleme
-            shuffledKartlar.forEach(kart => {
+            // 2. Olayları Ekleme (Tüm kartlara bir kez eklenir)
+            kartlar.forEach(kart => {
                 kart.addEventListener('dragstart', dragStartHandler);
                 kart.addEventListener('dragend', dragEndHandler);
             });
@@ -443,8 +526,9 @@
                         alan.appendChild(kartKlonu);
 
                          draggedCard.setAttribute('draggable', 'false'); 
-                         draggedCard.style.cursor = 'not-allowed';
+                         // draggedCard.style.cursor = 'not-allowed'; // Zaten .siluet yapıyor
 
+                        // Klonlanan karta da sürükleme olayı ekle (slottan slota taşıma için)
                         kartKlonu.addEventListener('dragstart', dragStartHandler);
                         kartKlonu.addEventListener('dragend', dragEndHandler);
                         
@@ -458,7 +542,9 @@
                         draggedCard.classList.remove('dragging'); 
                         alan.appendChild(draggedCard); 
                     }
-
+                    
+                    if (audioCtx) playSound('drop');
+                    
                     checkButtonState(); 
 
                     alan.classList.add('dropped');
@@ -467,11 +553,10 @@
                             alan.classList.remove('dropped'); 
                        }
                     }, 400); 
-                    
                 });
             });
             
-            // 4. Bırakma Alanı Olayları (Ana Kutu)
+            // 4. Bırakma Alanı Olayları (Ana Kutu - Geri Bırakma)
             kartlarContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
             });
@@ -479,6 +564,7 @@
             kartlarContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
                 
+                // Sadece bir slottan geri bırakılıyorsa çalışır
                 if (draggedCard && draggedCard.parentElement.classList.contains('birakma-alani')) {
                     
                     const cumleMetni = draggedCard.parentElement.parentElement.querySelector('.cumle-baslangic');
@@ -486,6 +572,7 @@
                         cumleMetni.classList.remove('metin-pasif');
                     }
 
+                    // Orijinal kartı tekrar görünür ve sürüklenebilir yap
                     const originalKart = kartlarContainer.querySelector('.kart-bitis[data-id="' + draggedCard.dataset.id + '"]');
                     if (originalKart) {
                         originalKart.classList.remove('siluet');
@@ -493,7 +580,7 @@
                         originalKart.style.cursor = 'grab';
                     }
                     
-                    draggedCard.remove(); 
+                    draggedCard.remove(); // Slottaki klonu sil
                     
                     doluSlotSayisi--;
                     checkButtonState(); 
@@ -514,29 +601,37 @@
             // 6. KONTROL ET (TİK) BUTONU OLAYI
             checkBtn.addEventListener('click', () => {
                 let tumuDogru = true;
+                let yanlisSayisi = 0;
 
                 alanlar.forEach(alan => {
                     const kartKlonu = alan.querySelector('.kart-bitis');
                     if (!kartKlonu) return; 
 
-                    kartKlonu.classList.remove('yanlis-anim');
-                    kartKlonu.classList.remove('dogru'); 
+                    kartKlonu.classList.remove('yanlis-anim', 'dogru'); 
 
                     const cardId = kartKlonu.dataset.id;
                     const alanId = alan.dataset.id;
 
                     if (cardId === alanId) {
                         kartKlonu.classList.add('dogru');
+                        // Doğruysa sürüklemeyi kapat
+                        kartKlonu.setAttribute('draggable', 'false');
+                        kartKlonu.style.cursor = 'default';
                     } else {
                         tumuDogru = false; 
+                        yanlisSayisi++;
                         kartKlonu.classList.add('yanlis-anim'); 
                         
+                        if (audioCtx) playSound('wrong');
+                        
+                        // Yanlış olanı 600ms sonra seçenek kutusuna geri gönder
                         setTimeout(() => {
-                            const cumleMetni = alan.querySelector('.cumle-baslangic') || (alan.parentElement && alan.parentElement.querySelector('.cumle-baslangic'));
+                            const cumleMetni = alan.parentElement.querySelector('.cumle-baslangic');
                             if (cumleMetni) {
                                 cumleMetni.classList.remove('metin-pasif');
                             }
 
+                            // Orijinal kartı tekrar aktifleştir
                             const originalKart = kartlarContainer.querySelector('.kart-bitis[data-id="' + cardId + '"]');
                             if (originalKart) {
                                 originalKart.classList.remove('siluet');
@@ -555,15 +650,19 @@
                 });
                 
                 if (tumuDogru) {
+                    if (audioCtx) playSound('win'); 
                     checkBtn.style.display = 'none';
-                    resetBtn.style.display = 'block';
+                    resetBtn.style.display = 'block'; // Oyun bitti, yeniden başlat butonu çıksın
                 }
             });
 
-            // 7. Yeniden Başlat Butonu
-            resetBtn.addEventListener('click', () => {
-                location.reload();
-            });
+            // 7. Yeniden Başlat Butonu (GÜNCELLENDİ)
+            resetBtn.addEventListener('click', resetGame); // Sayfayı yenilemek yerine resetGame fonksiyonunu çağır
+
+            
+            // --- OYUNU İLK KEZ BAŞLAT ---
+            resetGame();
+
         });
     </script>
 </body>
