@@ -25,20 +25,19 @@
         }
 
         #game-container {
-            width: 960px;
-            height: 540px;
+            width: 1920px; 
+            height: 1080px; 
             background-color: #f4f7f6;
             position: absolute;
             top: 50%;
             left: 50%;
             transform-origin: center center;
-            padding: 15px; 
+            padding: 30px; 
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden; 
-            /* image-rendering: pixelated; -> KALDIRILDI (Bulanıklık sebebi buydu) */
             will-change: transform; 
         }
 
@@ -46,103 +45,100 @@
             color: #00796b;
             text-align: center;
             margin-top: 0; 
-            margin-bottom: 10px; 
-            font-size: 2.2rem; 
+            margin-bottom: 20px; 
+            font-size: 4.4rem; 
             white-space: nowrap; 
         }
         
         .etkilesim-alani {
             display: flex;
             flex-wrap: nowrap; 
-            gap: 20px; 
+            gap: 40px; 
             height: 100%; 
             overflow: hidden; 
-            /* justify-content: center; -> Kaldırıldı, flex ile yayılacak */
         }
 
-        /* 1. ESNEK DÜZENE DÖNÜŞ */
         .cumleler-kutusu {
-            flex: 1.5; /* Sağa daha fazla yer */
+            flex: 1.5; 
             min-width: 0; 
-            padding-right: 20px; 
+            padding-right: 40px; 
             display: flex;
             flex-direction: column;
             justify-content: space-around; 
             overflow-y: auto; 
+            overflow-x: hidden; 
+            /* YENİ: Sürükleme sırasındaki titremeyi engellemek için eklendi */
+            transform: translateZ(0);
         }
         
         .secenekler-kutusu {
-            flex: 1; /* Sola daha az yer */
-            min-width: 200px; /* Minimum genişlik */
+            flex: 1; 
+            min-width: 400px; 
             background-color: #fafafa;
             border: 2px dashed #d0d0d0;
-            border-radius: 8px;
-            padding: 10px; 
-            padding-left: 20px; 
+            border-radius: 16px; 
+            padding: 20px; 
+            padding-left: 40px; 
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-around; 
             transition: background-color 0.3s ease;
             overflow-y: auto; 
+            overflow-x: hidden; 
         }
 
         .cumle-satiri {
             display: flex;
-            /* 5. DİKEY HİZALAMA */
             align-items: center; 
-            margin-bottom: 8px; 
+            margin-bottom: 16px; 
             background-color: #eeeeee; 
-            border-radius: 8px;
-            padding: 5px 10px; 
-            min-height: 40px; 
+            border-radius: 16px; 
+            padding: 10px 20px; 
+            min-height: 80px; 
         }
 
-        /* 2. CÜMLELERİN KAYDIRILMASINA İZİN VER */
         .cumle-baslangic {
-            font-size: 1.6rem; 
+            font-size: 3.2rem; 
             line-height: 1.25; 
-            padding: 2px 0; 
+            padding: 4px 0; 
             color: #222;
-            /* white-space: nowrap; -> Kaldırıldı */
             text-align: right; 
-            margin-left: 5px; 
+            margin-left: 10px; 
             flex-grow: 1; 
             min-width: 0; 
-            /* overflow: hidden; -> Kaldırıldı */
-            /* text-overflow: ellipsis; -> Kaldırıldı */
         }
 
         .kart-bitis {
-            font-size: 1.5rem;
+            font-size: 3.0rem; 
             font-weight: 600; 
             line-height: 1.15; 
-            padding: 3px 10px; 
+            padding: 6px 20px; 
             background-color: #fff;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            margin-bottom: 2px; 
+            border-radius: 16px; 
+            margin-bottom: 4px; 
             cursor: grab;
-            transition: background-color 0.3s, border-color 0.3s, opacity 0.2s, box-shadow 0.3s, transform 0.2s ease-out;
+            transition: background-color 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s, transform 0.2s ease-out;
             user-select: none; 
             -webkit-user-select: none;
             -webkit-touch-callout: none;
             width: fit-content; 
             max-width: 95%; 
-            white-space: nowrap; /* Kartlar tek satır kalsın */
+            white-space: nowrap; 
             transform: translateZ(0); 
             -webkit-transform: translateZ(0);
         }
 
         .kart-bitis:hover:not(.siluet) { 
-             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-             transform: translateY(-1px) translateZ(0); 
+             box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+             transform: translateY(-2px) translateZ(0); 
         }
         
         .kart-bitis.dragging { 
-             opacity: 0.9; 
-             box-shadow: 0 6px 12px rgba(0,0,0,0.2); 
-             transform: scale(1.03) translateY(-2px) translateZ(0); 
+             opacity: 0.85; 
+             box-shadow: 0 16px 32px rgba(0,0,0,0.25); 
+             transform: translateY(-8px) rotate(-3deg) translateZ(0); 
         } 
         
         .kart-bitis.siluet {
@@ -152,33 +148,34 @@
         }
         .kart-bitis.siluet:hover { box-shadow: none; transform: none; }
         
-        /* 3. BIRAKMA ALANI TEKRAR ESNEK */
         .birakma-alani {
-            flex-grow: 1; /* Kalan alanı doldur */
-            /* width: 285px; -> Kaldırıldı */
-            /* min-width: 285px; -> Kaldırıldı */
+            flex-grow: 1; 
             flex-shrink: 0; 
-            min-height: 36px; 
-            border-radius: 8px; 
-            transition: background-color 0.3s ease, box-shadow 0.3s ease; 
+            min-height: 72px; 
+            border-radius: 16px; 
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; 
             background-color: transparent; 
-            padding: 2px 5px; 
+            padding: 4px 10px; 
             box-sizing: border-box;
-            margin-right: 5px; 
+            margin-right: 10px; 
+            border: 2px dashed transparent;
         }
         
         .drag-over { 
-             box-shadow: inset 0 0 1px rgba(0, 108, 0, 0.2); 
+             background-color: #f0f0f0; 
+             border-color: #aaaaaa; 
+             box-shadow: none;
         }
         
-        @keyframes popIn {
-            0% { transform: scale(1.02); } 
-            100% { transform: scale(1); }
+        @keyframes dropSettle {
+            0% { transform: scale(1.1); opacity: 0.8; }
+            50% { transform: scale(0.95); opacity: 1; }
+            100% { transform: scale(1.0); }
         }
         .dropped .kart-bitis { 
-            animation: popIn 0.15s ease-out; 
+            animation: dropSettle 0.2s ease-out; 
         }
 
         .birakma-alani.dogru { 
@@ -190,26 +187,32 @@
         }
         .yanlis-anim { animation: shake 0.5s; background-color: #ffebee; border-color: #f44336; }
         @keyframes shake {
-            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); }
+            0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 
+            50% { transform: translateX(10px); } 
+            75% { transform: translateX(-10px); } 
             100% { transform: translateX(0); }
         }
         .buton-alani { 
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            gap: 15px; 
-            margin-top: 10px; 
+            gap: 30px; 
+            margin-top: 20px; 
         }
         .buton {
-            display: block; padding: 5px 20px; font-family: 'Markazi Text', serif;
-            font-size: 1.3rem; font-weight: 600; color: #fff; background-color: #00796b;
-            border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, transform 0.2s;
+            display: block; padding: 10px 40px; 
+            font-family: 'Markazi Text', serif;
+            font-size: 2.6rem; 
+            font-weight: 600; color: #fff; background-color: #00796b;
+            border: none; border-radius: 16px; 
+            cursor: pointer; transition: background-color 0.3s, transform 0.2s;
         }
         .buton:hover { background-color: #004d40; }
         #checkBtn {
-            background-color: #4CAF50; font-size: 1.8rem; 
-            padding: 2px 15px; display: none; 
+            background-color: #4CAF50; 
+            font-size: 3.6rem; 
+            padding: 4px 30px; 
+            display: none; 
         }
         #checkBtn:hover { background-color: #388E3C; }
         #geriBildirim { display: none; }
@@ -274,8 +277,8 @@
 
             // --- Ekran Ölçeklendirme ---
             const gameContainer = document.getElementById('game-container');
-            const BASE_WIDTH = 960;
-            const BASE_HEIGHT = 540;
+            const BASE_WIDTH = 1920;  
+            const BASE_HEIGHT = 1080; 
 
             function resizeGame() {
                 const windowWidth = window.innerWidth;
@@ -311,7 +314,6 @@
             
             const shuffledKartlar = kartlarContainer.querySelectorAll('.kart-bitis');
 
-            // --- Genişlik Ayarlama Fonksiyonu KALDIRILDI ---
             
             // --- Sürükleme Fonksiyonları ---
             function dragStartHandler(e) {
@@ -381,7 +383,7 @@
                         alan.classList.add('dropped');
                         setTimeout(() => {
                            alan.classList.remove('dropped'); 
-                        }, 150); 
+                        }, 200); 
                     }
                 });
             });
