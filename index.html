@@ -93,7 +93,6 @@
             border-radius: 16px; 
             padding: 10px 20px; 
             min-height: 80px; 
-            /* CSS geçişi eklendi */
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
@@ -123,7 +122,7 @@
             border-radius: 16px; 
             margin-bottom: 4px; 
             cursor: grab;
-            transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0.3, 1), background-color 0.3s, border-color 0.3s; /* */
+            transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0.3, 1), background-color 0.3s, border-color 0.3s;
             user-select: none; 
             -webkit-user-select: none;
             -webkit-touch-callout: none;
@@ -145,15 +144,13 @@
              transform: translateY(-10px) scale(1.02) translateZ(0); 
         } 
         
-        /* */
         .kart-bitis.siluet {
             background-color: #f0f0f0; border-color: #d0d0d0; color: #bbb;
             cursor: not-allowed; 
-            opacity: 0.3; /* display: none yerine bu kullanıldı */
-            pointer-events: none; /* Tıklanamaz/Sürüklenemez yapar */
+            opacity: 0.3; 
+            pointer-events: none; 
             transform: none !important; 
             box-shadow: none !important;
-            /* display: none;  YORUM SATIRI HALİNE GETİRİLDİ */
         }
         .kart-bitis.siluet:hover { box-shadow: none; transform: none; }
 
@@ -280,7 +277,7 @@
                     <div class="birakma-alani" data-id="3"></div>
                 </div>
                 <div class="cumle-satiri">
-                    <div class="cumle-baslangic">يَحْتَفِلونَ المُسْلِمون بِالأَعْياد</div>
+                    <div class="cumle-baslangic">يَحْتَفِلُ المُسْلِمون بِالأَعْياد</div>
                     <div class="birakma-alani" data-id="4"></div>
                 </div>
                 <div class="cumle-satiri">
@@ -305,7 +302,7 @@
         </div>
         
         <div class="buton-alani">
-            <button id="resetBtn" class="buton">إعادة المحاولة</button>
+            <button id="resetBtn" class="buton">إِعادَة المُحاوَلَة</button>
             <button id="checkBtn" class="buton">&#10004;</button> 
         </div>
     </div>
@@ -330,21 +327,30 @@
             resizeGame();
             window.addEventListener('resize', resizeGame);
             
-            // --- WEB AUDIO API KURULUMU ---
-            let audioCtx;
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.error('Web Audio API is not supported in this browser');
-            }
-            document.body.addEventListener('click', () => {
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume();
+            // --- GÜNCELLENDİ: TIKLAMAYLA SESİ BAŞLATMA ---
+            let audioCtx = null; // Başlangıçta null, önceden yükleme yok.
+
+            // Sesi başlatan fonksiyon (sadece bir kez çalışacak)
+            function initAudio() {
+                if (audioCtx) return; // Zaten başlatıldıysa bir daha çalışma
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error('Web Audio API is not supported in this browser');
                 }
-            }, { once: true });
+            }
+            
+            // Kullanıcının ilk etkileşiminde (dokunma, tıklama veya tuşa basma) sesi başlat.
+            document.body.addEventListener('pointerdown', initAudio, { once: true });
+            document.body.addEventListener('keydown', initAudio, { once: true });
+            // --- GÜNCELLEME SONU ---
+
 
             function playSound(type) {
+                // audioCtx 'initAudio' ile oluşturulmadıysa (yani kullanıcı henüz tıklamadıysa)
+                // bu fonksiyon hiçbir şey yapmaz.
                 if (!audioCtx) return; 
+                
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.connect(gainNode);
@@ -394,7 +400,7 @@
             const toplamEslestirme = alanlar.length;
 
 
-            // --- YENİ FONKSİYON: OYUNU SIFIRLA VE KUR ---
+            // --- OYUNU SIFIRLA VE KUR ---
             function resetGame() {
                 // 1. Değişkenleri ve butonları sıfırla
                 doluSlotSayisi = 0;
@@ -417,13 +423,12 @@
                     kart.style.cursor = 'grab';
                 });
                 
-                // 4. CÜMLELERİ KARIŞTIR (İsteğiniz)
+                // 4. CÜMLELERİ KARIŞTIR
                 let cumleSatirlari = Array.from(cumlelerKutusu.querySelectorAll('.cumle-satiri'));
                 for (let i = cumleSatirlari.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [cumleSatirlari[i], cumleSatirlari[j]] = [cumleSatirlari[j], cumleSatirlari[i]];
                 }
-                // Karışan cümleleri kutuya geri ekle
                 cumleSatirlari.forEach(satir => cumlelerKutusu.appendChild(satir));
 
                 // 5. SEÇENEKLERİ KARIŞTIR (Kartları)
@@ -432,7 +437,6 @@
                     const j = Math.floor(Math.random() * (i + 1));
                     [kartArray[i], kartArray[j]] = [kartArray[j], kartArray[i]];
                 }
-                // Karışan kartları kutuya geri ekle
                 kartArray.forEach(kart => kartlarContainer.appendChild(kart));
             }
             
@@ -475,7 +479,7 @@
 
                 if (draggedCard) {
                     if (draggedCard.getAttribute('draggable') === 'false') {
-                        // Başarılı bırakma, kart gizli kalsın
+                        // Başarılı bırakma
                     } else {
                         // Başarısız bırakma, kartı listede tekrar göster (silüeti kaldır)
                         draggedCard.classList.remove('siluet');
@@ -526,9 +530,7 @@
                         alan.appendChild(kartKlonu);
 
                          draggedCard.setAttribute('draggable', 'false'); 
-                         // draggedCard.style.cursor = 'not-allowed'; // Zaten .siluet yapıyor
 
-                        // Klonlanan karta da sürükleme olayı ekle (slottan slota taşıma için)
                         kartKlonu.addEventListener('dragstart', dragStartHandler);
                         kartKlonu.addEventListener('dragend', dragEndHandler);
                         
@@ -543,7 +545,7 @@
                         alan.appendChild(draggedCard); 
                     }
                     
-                    if (audioCtx) playSound('drop');
+                    playSound('drop');
                     
                     checkButtonState(); 
 
@@ -564,7 +566,6 @@
             kartlarContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
                 
-                // Sadece bir slottan geri bırakılıyorsa çalışır
                 if (draggedCard && draggedCard.parentElement.classList.contains('birakma-alani')) {
                     
                     const cumleMetni = draggedCard.parentElement.parentElement.querySelector('.cumle-baslangic');
@@ -572,7 +573,6 @@
                         cumleMetni.classList.remove('metin-pasif');
                     }
 
-                    // Orijinal kartı tekrar görünür ve sürüklenebilir yap
                     const originalKart = kartlarContainer.querySelector('.kart-bitis[data-id="' + draggedCard.dataset.id + '"]');
                     if (originalKart) {
                         originalKart.classList.remove('siluet');
@@ -580,7 +580,7 @@
                         originalKart.style.cursor = 'grab';
                     }
                     
-                    draggedCard.remove(); // Slottaki klonu sil
+                    draggedCard.remove(); 
                     
                     doluSlotSayisi--;
                     checkButtonState(); 
@@ -614,7 +614,6 @@
 
                     if (cardId === alanId) {
                         kartKlonu.classList.add('dogru');
-                        // Doğruysa sürüklemeyi kapat
                         kartKlonu.setAttribute('draggable', 'false');
                         kartKlonu.style.cursor = 'default';
                     } else {
@@ -622,16 +621,14 @@
                         yanlisSayisi++;
                         kartKlonu.classList.add('yanlis-anim'); 
                         
-                        if (audioCtx) playSound('wrong');
+                        playSound('wrong');
                         
-                        // Yanlış olanı 600ms sonra seçenek kutusuna geri gönder
                         setTimeout(() => {
                             const cumleMetni = alan.parentElement.querySelector('.cumle-baslangic');
                             if (cumleMetni) {
                                 cumleMetni.classList.remove('metin-pasif');
                             }
 
-                            // Orijinal kartı tekrar aktifleştir
                             const originalKart = kartlarContainer.querySelector('.kart-bitis[data-id="' + cardId + '"]');
                             if (originalKart) {
                                 originalKart.classList.remove('siluet');
@@ -650,15 +647,14 @@
                 });
                 
                 if (tumuDogru) {
-                    if (audioCtx) playSound('win'); 
+                    playSound('win'); 
                     checkBtn.style.display = 'none';
-                    resetBtn.style.display = 'block'; // Oyun bitti, yeniden başlat butonu çıksın
+                    resetBtn.style.display = 'block'; 
                 }
             });
 
-            // 7. Yeniden Başlat Butonu (GÜNCELLENDİ)
-            resetBtn.addEventListener('click', resetGame); // Sayfayı yenilemek yerine resetGame fonksiyonunu çağır
-
+            // 7. Yeniden Başlat Butonu
+            resetBtn.addEventListener('click', resetGame); 
             
             // --- OYUNU İLK KEZ BAŞLAT ---
             resetGame();
