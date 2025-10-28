@@ -65,10 +65,8 @@
             display: flex;
             flex-direction: column;
             justify-content: space-around; 
-            overflow-y: auto; 
             overflow-x: hidden; 
-            /* YENİ: Sürükleme sırasındaki titremeyi engellemek için eklendi */
-            transform: translateZ(0);
+            /* transform kaldırıldı */
         }
         
         .secenekler-kutusu {
@@ -84,8 +82,8 @@
             align-items: center;
             justify-content: space-around; 
             transition: background-color 0.3s ease;
-            overflow-y: auto; 
             overflow-x: hidden; 
+            /* transform kaldırıldı */
         }
 
         .cumle-satiri {
@@ -102,11 +100,16 @@
             font-size: 3.2rem; 
             line-height: 1.25; 
             padding: 4px 0; 
-            color: #222;
+            color: #222; 
             text-align: right; 
             margin-left: 10px; 
             flex-grow: 1; 
             min-width: 0; 
+            transition: color 0.3s ease; 
+        }
+        
+        .cumle-baslangic.metin-pasif {
+            color: #9e9e9e; 
         }
 
         .kart-bitis {
@@ -119,37 +122,60 @@
             border-radius: 16px; 
             margin-bottom: 4px; 
             cursor: grab;
-            transition: background-color 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s, transform 0.2s ease-out;
+            transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.2, 0, 0.3, 1);
             user-select: none; 
             -webkit-user-select: none;
             -webkit-touch-callout: none;
             width: fit-content; 
             max-width: 95%; 
             white-space: nowrap; 
-            transform: translateZ(0); 
+            transform: translateZ(0); /* Kartların kendi katmanında kalması iyi olabilir */
             -webkit-transform: translateZ(0);
         }
 
+        /* Hover animasyonu geri geldi */
         .kart-bitis:hover:not(.siluet) { 
-             box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-             transform: translateY(-2px) translateZ(0); 
+             box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
+             transform: translateY(-3px) scale(1.03) translateZ(0);
         }
         
+        /* Dragging animasyonu geri geldi (orijinal kart için, hayalet oluşmadan önce) */
         .kart-bitis.dragging { 
-             opacity: 0.85; 
-             box-shadow: 0 16px 32px rgba(0,0,0,0.25); 
-             transform: translateY(-8px) rotate(-3deg) translateZ(0); 
+             opacity: 0.75; 
+             box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+             transform: translateY(-10px) scale(1.02) translateZ(0); 
         } 
         
         .kart-bitis.siluet {
             background-color: #f0f0f0; border-color: #d0d0d0; color: #bbb;
             cursor: not-allowed; opacity: 0.6;
-            transform: none; 
+            transform: none !important; /* Siluet asla hareket etmesin */
+            box-shadow: none !important;
         }
         .kart-bitis.siluet:hover { box-shadow: none; transform: none; }
+
+        /* YENİ: Sürükleme hayaleti için stil */
+        .drag-ghost {
+            opacity: 0.7;
+            background: white; /* Tarayıcı bazen şeffaf yapabilir, arka plan verelim */
+            border: 1px solid #ccc; /* Kenarlık ekleyelim */
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            /* Font stillerini miras almayabilir, explicit yapalım */
+            font-family: 'Markazi Text', serif;
+            font-size: 3.0rem; 
+            font-weight: 600; 
+            line-height: 1.15; 
+            padding: 6px 20px; 
+            pointer-events: none; /* Üzerindeki olayları engelle */
+            position: absolute; /* Akıştan çıkar */
+            top: -9999px; /* Ekranda görünmesin */
+            left: -9999px;
+            z-index: 999; /* Her şeyin üstünde */
+        }
         
         .birakma-alani {
-            flex-grow: 1; 
+            width: 500px; 
             flex-shrink: 0; 
             min-height: 72px; 
             border-radius: 16px; 
@@ -163,19 +189,25 @@
             border: 2px dashed transparent;
         }
         
+        @keyframes pulseBg {
+            0% { background-color: #f0f0f0; }
+            50% { background-color: #e8e8e8; }
+            100% { background-color: #f0f0f0; }
+        }
         .drag-over { 
-             background-color: #f0f0f0; 
+             animation: pulseBg 1.5s infinite; 
              border-color: #aaaaaa; 
              box-shadow: none;
         }
         
-        @keyframes dropSettle {
+        @keyframes elasticDrop {
             0% { transform: scale(1.1); opacity: 0.8; }
-            50% { transform: scale(0.95); opacity: 1; }
+            40% { transform: scale(0.9); opacity: 1; }
+            70% { transform: scale(1.05); }
             100% { transform: scale(1.0); }
         }
         .dropped .kart-bitis { 
-            animation: dropSettle 0.2s ease-out; 
+            animation: elasticDrop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .birakma-alani.dogru { 
@@ -185,13 +217,18 @@
             background-color: #e8f5e9; border-color: #4caf50;
             cursor: default; opacity: 1;
         }
-        .yanlis-anim { animation: shake 0.5s; background-color: #ffebee; border-color: #f44336; }
-        @keyframes shake {
-            0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 
-            50% { transform: translateX(10px); } 
-            75% { transform: translateX(-10px); } 
-            100% { transform: translateX(0); }
+
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
         }
+        .yanlis-anim { 
+            animation: vibrate 0.3s; 
+            background-color: #ffebee; 
+            border-color: #f44336; 
+        }
+        
         .buton-alani { 
             display: flex; 
             justify-content: center; 
@@ -300,6 +337,7 @@
             const checkBtn = document.getElementById('checkBtn');
             
             let draggedCard = null;
+            let ghostElement = null; // Hayalet elementi takip etmek için
             let doluSlotSayisi = 0;
             const toplamEslestirme = alanlar.length;
 
@@ -315,20 +353,62 @@
             const shuffledKartlar = kartlarContainer.querySelectorAll('.kart-bitis');
 
             
-            // --- Sürükleme Fonksiyonları ---
+            // --- Sürükleme Fonksiyonları (Özel Hayalet Mantığı) ---
+            
             function dragStartHandler(e) {
-                if (!e.target.classList.contains('siluet')) {
-                    draggedCard = e.target;
-                    setTimeout(() => e.target.classList.add('dragging'), 0); 
-                } else {
+                if (e.target.classList.contains('siluet') || e.target.classList.contains('dogru')) {
                     e.preventDefault(); 
+                    return;
                 }
+                draggedCard = e.target;
+                
+                // 1. Özel hayalet oluştur
+                ghostElement = e.target.cloneNode(true);
+                ghostElement.classList.add('drag-ghost'); // Stil ekle
+                document.body.appendChild(ghostElement); // Body'ye ekle (görünmez)
+
+                // 2. Tarayıcıya özel hayaleti kullanmasını söyle
+                // offsetX/Y fare imlecinin kart üzerindeki konumudur, hayaleti buna göre hizalar
+                e.dataTransfer.setDragImage(ghostElement, e.offsetX, e.offsetY);
+
+                // 3. Tarayıcı hayaleti aldıktan sonra orijinali siluet yap ve klonu sil
+                requestAnimationFrame(() => {
+                    if (ghostElement) {
+                        document.body.removeChild(ghostElement); // Hayaletin DOM kopyasını sil
+                        ghostElement = null; // Referansı temizle
+                    }
+                    // Sadece listeden sürüklenen kartın orijinalini siluet yap
+                    if (draggedCard && !draggedCard.parentElement.classList.contains('birakma-alani')) {
+                         draggedCard.classList.add('siluet');
+                    }
+                    // Orijinal karta uygulanan dragging animasyonunu kaldır
+                    if (draggedCard) {
+                        draggedCard.classList.remove('dragging');
+                    }
+                });
+                
+                 // 4. Orijinale kısa süreliğine dragging ekle (isteğe bağlı, başlangıç animasyonu için)
+                 e.target.classList.add('dragging');
+
             }
             
             function dragEndHandler(e) {
-                if (e.target && e.target.classList.contains('dragging')) {
-                    e.target.classList.remove('dragging');
+                // Hayaletin DOM kopyası kaldıysa sil (güvenlik önlemi)
+                if (ghostElement && ghostElement.parentElement === document.body) {
+                    document.body.removeChild(ghostElement);
                 }
+                ghostElement = null;
+
+                // Sürükleme başarısız olduysa veya iptal edildiyse orijinali normale döndür
+                // (Bırakma başarılıysa, orijinal 'siluet' kalmalı)
+                if (draggedCard && draggedCard.classList.contains('siluet') && !draggedCard.hasAttribute('draggable')) {
+                   // Bırakma başarılı, orijinal kilitli kalsın
+                } else if (draggedCard) {
+                     // Bırakma başarısız/iptal edildi, orijinali normale döndür
+                     draggedCard.classList.remove('siluet');
+                     draggedCard.classList.remove('dragging'); // Varsa kaldır
+                }
+                
                 draggedCard = null; 
             }
 
@@ -347,61 +427,79 @@
                     }
                 });
                 alan.addEventListener('dragleave', () => {
-                    alan.classList.remove('drag-over');
+                    alan.classList.remove('drag-over'); 
                 });
                 
                 alan.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    alan.classList.remove('drag-over');
+                    alan.classList.remove('drag-over'); 
                     
-                    if (draggedCard && !alan.querySelector('.kart-bitis')) { 
-                        let placedElement; 
-                        if (!draggedCard.parentElement.classList.contains('birakma-alani')) {
-                            const kartKlonu = draggedCard.cloneNode(true);
-                            kartKlonu.classList.remove('dragging'); 
-                            kartKlonu.style.cursor = 'grab'; 
-                            alan.appendChild(kartKlonu);
-                            placedElement = kartKlonu; 
-
-                            draggedCard.classList.add('siluet');
-                            draggedCard.setAttribute('draggable', 'false');
-                            draggedCard.style.cursor = 'not-allowed';
-
-                            kartKlonu.addEventListener('dragstart', dragStartHandler);
-                            kartKlonu.addEventListener('dragend', dragEndHandler);
-                            
-                            doluSlotSayisi++;
-                            checkButtonState(); 
-                        }
-                        else {
-                            alan.appendChild(draggedCard); 
-                             placedElement = draggedCard; 
-                            checkButtonState();
-                        }
-
-                        // BIRAKMA ANİMASYONU
-                        alan.classList.add('dropped');
-                        setTimeout(() => {
-                           alan.classList.remove('dropped'); 
-                        }, 200); 
+                    if (!draggedCard || alan.querySelector('.kart-bitis')) {
+                        return; 
                     }
+
+                    const cumleMetni = alan.parentElement.querySelector('.cumle-baslangic');
+                    if(cumleMetni) {
+                        cumleMetni.classList.add('metin-pasif');
+                    }
+
+                    const isFromList = draggedCard.classList.contains('siluet'); // Orijinal kart siluet ise listeden geliyordur
+                    
+                    if (isFromList) {
+                        const kartKlonu = draggedCard.cloneNode(true);
+                        kartKlonu.classList.remove('dragging', 'siluet'); // Klon temiz olmalı
+                        kartKlonu.style.cursor = 'grab';
+                        alan.appendChild(kartKlonu);
+
+                        // Orijinal kart zaten siluet ve kilitli (dragStart'ta yapıldı)
+                         draggedCard.setAttribute('draggable', 'false'); // Tekrar kilitle (emin olmak için)
+                         draggedCard.style.cursor = 'not-allowed';
+
+                        // Yeni klona olayları ekle
+                        kartKlonu.addEventListener('dragstart', dragStartHandler);
+                        kartKlonu.addEventListener('dragend', dragEndHandler);
+                        
+                        doluSlotSayisi++;
+                    }
+                    else { // Slottan slota taşıma (sürüklenen kart bir klondu)
+                        const eskiCumleMetni = draggedCard.parentElement.parentElement.querySelector('.cumle-baslangic');
+                        if (eskiCumleMetni) {
+                            eskiCumleMetni.classList.remove('metin-pasif');
+                        }
+                        // Sürüklenen klondan (draggedCard) dragging sınıfını kaldır (varsa)
+                        draggedCard.classList.remove('dragging'); 
+                        alan.appendChild(draggedCard); // Klonu yeni yuvaya taşı
+                    }
+
+                    checkButtonState(); 
+
+                    alan.classList.add('dropped');
+                    setTimeout(() => {
+                       if (alan.classList.contains('dropped')) {
+                            alan.classList.remove('dropped'); 
+                       }
+                    }, 400); 
+                    
                 });
             });
             
             // 4. Bırakma Alanı Olayları (Ana Kutu)
             kartlarContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                kartlarContainer.classList.add('drag-over');
-            });
-            kartlarContainer.addEventListener('dragleave', () => {
-                kartlarContainer.classList.remove('drag-over');
             });
             
             kartlarContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
-                kartlarContainer.classList.remove('drag-over');
                 
+                // Kart bir slottan listeye geri taşınıyorsa (draggedCard bir klon)
                 if (draggedCard && draggedCard.parentElement.classList.contains('birakma-alani')) {
+                    
+                    const cumleMetni = draggedCard.parentElement.parentElement.querySelector('.cumle-baslangic');
+                    if (cumleMetni) {
+                        cumleMetni.classList.remove('metin-pasif');
+                    }
+
+                    // Orijinal kartı bul ve kilidini aç
                     const originalKart = kartlarContainer.querySelector('.kart-bitis.siluet[data-id="' + draggedCard.dataset.id + '"]');
                     if (originalKart) {
                         originalKart.classList.remove('siluet');
@@ -409,7 +507,7 @@
                         originalKart.style.cursor = 'grab';
                     }
                     
-                    draggedCard.remove();
+                    draggedCard.remove(); // Slottaki klonu sil
                     
                     doluSlotSayisi--;
                     checkButtonState(); 
@@ -430,11 +528,12 @@
             // 6. KONTROL ET (TİK) BUTONU OLAYI
             checkBtn.addEventListener('click', () => {
                 let tumuDogru = true;
-                let yanlisVar = false;
 
                 alanlar.forEach(alan => {
                     const kartKlonu = alan.querySelector('.kart-bitis');
                     if (!kartKlonu) return; 
+
+                    kartKlonu.classList.remove('yanlis-anim');
 
                     const cardId = kartKlonu.dataset.id;
                     const alanId = alan.dataset.id;
@@ -443,15 +542,18 @@
                         kartKlonu.classList.add('dogru');
                         kartKlonu.setAttribute('draggable', 'false'); 
                         kartKlonu.style.cursor = 'default';
+                        kartKlonu.removeEventListener('dragstart', dragStartHandler);
+                        kartKlonu.removeEventListener('dragend', dragEndHandler);
                     } else {
-                        tumuDogru = false;
-                        yanlisVar = true; 
-                        
-                        kartKlonu.classList.add('yanlis-anim');
+                        tumuDogru = false; 
+                        kartKlonu.classList.add('yanlis-anim'); 
                         
                         setTimeout(() => {
-                            kartKlonu.classList.remove('yanlis-anim');
-                            
+                            const cumleMetni = alan.querySelector('.cumle-baslangic') || (alan.parentElement && alan.parentElement.querySelector('.cumle-baslangic'));
+                            if (cumleMetni) {
+                                cumleMetni.classList.remove('metin-pasif');
+                            }
+
                             const originalKart = kartlarContainer.querySelector('.kart-bitis.siluet[data-id="' + cardId + '"]');
                             if (originalKart) {
                                 originalKart.classList.remove('siluet');
@@ -459,7 +561,9 @@
                                 originalKart.style.cursor = 'grab';
                             }
                             
-                            kartKlonu.remove();
+                            if (kartKlonu && kartKlonu.parentElement) {
+                                kartKlonu.remove(); 
+                            }
                             
                             doluSlotSayisi--; 
                             checkButtonState(); 
@@ -479,6 +583,5 @@
             });
         });
     </script>
-
 </body>
 </html>
