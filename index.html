@@ -24,7 +24,9 @@
         .kart-bitis.dragging{opacity:.75;box-shadow:0 20px 40px rgba(0,0,0,.3);transform:translateY(-10px) scale(1.02) translateZ(0)}
         .kart-bitis.siluet{background-color:#f0f0f0;border-color:#d0d0d0;color:#bbb;cursor:not-allowed;opacity:.3;pointer-events:none;transform:none!important;box-shadow:none!important}
         .kart-bitis.siluet:hover{box-shadow:none;transform:none}
-        .drag-ghost{opacity:.7;background:white;border:1px solid #ccc;border-radius:16px;box-shadow:0 10px 20px rgba(0,0,0,.2);font-family:'Markazi Text',serif;font-size:3.0rem;font-weight:600;line-height:1.15;padding:6px 20px;pointer-events:none;position:absolute;top:-9999px;left:-9999px;z-index:999}
+        
+        /* DÜZELTME: .drag-ghost CSS kuralı kaldırıldı, artık gerekli değil. */
+        
         .birakma-alani{width:500px;flex-shrink:0;min-height:72px;border-radius:16px;transition:background-color .3s ease,box-shadow .3s ease,border-color .3s ease;display:flex;align-items:center;justify-content:center;position:relative;background-color:transparent;padding:4px 10px;box-sizing:border-box;margin-right:10px;border:2px dashed transparent}
         @keyframes pulseBg{0%{background-color:#f0f0f0}50%{background-color:#e8e8e8}100%{background-color:#f0f0f0}}
         .drag-over{animation:pulseBg 1.5s infinite;border-color:#aaa;box-shadow:none}
@@ -176,7 +178,6 @@
             const checkBtn = document.getElementById('checkBtn');
             
             let draggedCard = null;
-            let ghostElement = null; 
             let doluSlotSayisi = 0;
             const toplamEslestirme = alanlar.length;
 
@@ -222,47 +223,41 @@
             
             // --- Sürükleme Fonksiyonları (Özel Hayalet Mantığı) ---
             
+            // DÜZELTME: Syntax error (fazladan parantez ve satır) giderildi
+            // ve mobil için hayalet element mantığı kaldırıldı
             function dragStartHandler(e) {
                 if (e.target.classList.contains('siluet')) {
                     e.preventDefault(); 
                     return;
                 }
                 draggedCard = e.target;
-                
-                ghostElement = e.target.cloneNode(true);
-                ghostElement.classList.add('drag-ghost'); 
-                document.body.appendChild(ghostElement); 
 
-                e.dataTransfer.setDragImage(ghostElement, e.offsetX, e.offsetY);
+                // iPad/iOS uyumluluğu için bu satır önemlidir.
+                if (e.dataTransfer) {
+                    e.dataTransfer.setData('text/plain', e.target.textContent);
+                }
 
-                requestAnimationFrame(() => {
-                    if (ghostElement) {
-                        document.body.removeChild(ghostElement); 
-                        ghostElement = null; 
-                    }
+                // Polyfill'in elemanı klonlamasına izin vermek için 
+                // 'siluet' sınıfını küçük bir gecikmeyle ekle.
+                setTimeout(() => {
                     if (draggedCard && !draggedCard.parentElement.classList.contains('birakma-alani')) {
                          draggedCard.classList.add('siluet');
                     }
-                    if (draggedCard) {
-                        draggedCard.classList.remove('dragging');
-                    }
-                });
+                }, 0); // 0ms gecikme yeterlidir
                 
                  e.target.classList.add('dragging');
             }
             
+            // DÜZELTME: Hayalet element mantığı kaldırıldı
             function dragEndHandler(e) {
-                if (ghostElement && ghostElement.parentElement === document.body) {
-                    document.body.removeChild(ghostElement);
-                }
-                ghostElement = null;
-
+                // ghostElement ile ilgili tüm kodlar silindi.
+                
                 if (draggedCard) {
-                    if (draggedCard.getAttribute('draggable') === 'false') {
-                    } else {
-                        draggedCard.classList.remove('siluet');
-                        draggedCard.classList.remove('dragging');
-                    }
+                    // 'draggable' kontrolü gereksiz görünüyor, 
+                    // zaten 'siluet' sınıfını temizliyorsunuz.
+                    // Basitleştirilmiş hali:
+                    draggedCard.classList.remove('siluet');
+                    draggedCard.classList.remove('dragging');
                 }
                 
                 draggedCard = null; 
